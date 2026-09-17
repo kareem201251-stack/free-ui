@@ -1,47 +1,8 @@
-local _W_seen = {}
-local _W_before = {}
-local _W_env = (type(getgenv) == "function" and getgenv()) or (type(getfenv) == "function" and getfenv(0)) or _G
-
-for k, v in next, _W_env do
-    _W_seen[k] = true
-    _W_before[k] = tostring(v)
-end
-
-local function _W_stub(name, fn)
-    if not rawget(_W_env, name) then 
-        rawset(_W_env, name, fn) 
-    end
-end
-
-_W_stub("identifyexecutor",  function() return "Xeno", "1.0.0" end)
-_W_stub("getexecutorname",   function() return "Xeno" end)
-_W_stub("isexecutorclosure", function() return false end)
-_W_stub("checkcaller",       function() return false end)
-_W_stub("hookfunction",      function(f) return f end)
-_W_stub("newcclosure",       function(f) return f end)
-_W_stub("clonefunction",     function(f) return f end)
-_W_stub("getgc",             function() return {} end)
-_W_stub("getreg",            function() return {} end)
-_W_stub("getregistry",       function() return {} end)
-_W_stub("getconstants",      function() return {} end)
-_W_stub("getupvalues",       function() return {} end)
-_W_stub("getgenv",           function() return _W_env end)
-_W_stub("getrenv",           function() return _W_env end)
-_W_stub("getsenv",           function() return _W_env end)
-
-local _W_payload = [=[--[[
-     _      ___         ____  ______
-    | | /| / (_)__  ___/ / / / /  _/
-    | |/ |/ / / _ \/ _  / /_/ // /
-    |__/|__/_/_//_/\_,_/\____/___/
-
-    v1.6.65  |  2026-07-01  |  Roblox UI Library for scripts
-
-    To view the source code, see the `src/` folder on the official GitHub repository.
-
-    Author: Footagesus (Footages, .ftgs, oftgs)
+--[[
+    WindUI v1.6.65
+    Roblox UI Library for scripts
+    Author: Footagesus
     Github: https://github.com/Footagesus/WindUI
-    Discord: https://discord.gg/ftgs-development-hub-1300692552005189632
     License: MIT
 ]]
 
@@ -255,23 +216,11 @@ do
                     local targetShape
 
                     if width > height then
-                        if sizeRatio >= baseRatio then
-                            targetShape = "SquircleH" .. (isOutline or isGlass or "")
-                        else
-                            targetShape = "Squircle" .. (isOutline or isGlass or "")
-                        end
+                        targetShape = (sizeRatio >= baseRatio and "SquircleH" or "Squircle") .. (isOutline or isGlass or "")
                     elseif width < height then
-                        if sizeRatio >= baseRatio then
-                            targetShape = "SquircleV" .. (isOutline or isGlass or "")
-                        else
-                            targetShape = "Squircle" .. (isOutline or isGlass or "")
-                        end
+                        targetShape = (sizeRatio >= baseRatio and "SquircleV" or "Squircle") .. (isOutline or isGlass or "")
                     else
-                        if sizeRatio >= baseRatio then
-                            targetShape = "Circle" .. (isOutline or isGlass or "")
-                        else
-                            targetShape = "Squircle" .. (isOutline or isGlass or "")
-                        end
+                        targetShape = (sizeRatio >= baseRatio and "Circle" or "Squircle") .. (isOutline or isGlass or "")
                     end
 
                     if targetShape ~= instanceData:GetType() then
@@ -295,9 +244,7 @@ do
             if type(iconString) == "string" then
                 local delimiterPos = iconString:find(":")
                 if delimiterPos then
-                    local pack = iconString:sub(1, delimiterPos - 1)
-                    local name = iconString:sub(delimiterPos + 1)
-                    return pack, name
+                    return iconString:sub(1, delimiterPos - 1), iconString:sub(delimiterPos + 1)
                 end
             end
             return nil, iconString
@@ -318,10 +265,7 @@ do
 
             for iconName, data in pairs(iconsData) do
                 if type(data) == "number" or (type(data) == "string" and data:match("^rbxassetid://")) then
-                    local assetId = data
-                    if type(data) == "number" then
-                        assetId = "rbxassetid://" .. tostring(data)
-                    end
+                    local assetId = type(data) == "number" and ("rbxassetid://" .. tostring(data)) or data
 
                     IconEngine.Icons[packName].Icons[iconName] = {
                         Image = assetId,
@@ -333,10 +277,7 @@ do
 
                 elseif type(data) == "table" then
                     if data.Image and data.ImageRectSize and data.ImageRectPosition then
-                        local assetId = data.Image
-                        if type(assetId) == "number" then
-                            assetId = "rbxassetid://" .. tostring(assetId)
-                        end
+                        local assetId = type(data.Image) == "number" and ("rbxassetid://" .. tostring(data.Image)) or data.Image
 
                         IconEngine.Icons[packName].Icons[iconName] = {
                             Image = assetId,
@@ -446,7 +387,7 @@ do
                     ImageRectOffset = isAssetUrl and nil or iconResult[2].ImageRectPosition,
                 })
 
-                if not isAssetUrl and iconResult[2].Parts then
+                if not isAssetUrl and iconResult and iconResult[2].Parts then
                     for partIdx, partName in next, iconResult[2].Parts do
                         local partIcon = IconEngine.Icon(partName, iconProps.Type)
 
@@ -478,10 +419,28 @@ do
                 imageLabel.ImageRectSize = isAssetUrl and nil or iconResult[2].ImageRectSize
                 imageLabel.ImageRectOffset = isAssetUrl and nil or iconResult[2].ImageRectPosition
 
-                if not isAssetUrl and iconResult[2].Parts then
+                if not isAssetUrl and iconResult and iconResult[2].Parts then
                     for partIdx, partName in next, iconResult[2].Parts do
                         local partIcon = IconEngine.Icon(partName, iconProps.Type)
 
                         local subImage = Instance.new("ImageLabel")
                         subImage.Size = UDim2.new(1, 0, 1, 0)
-    
+                        subImage.BackgroundTransparency = 1
+                        subImage.ImageColor3 = processedColors[1 + partIdx].Color
+                        subImage.ImageTransparency = processedTransparencies[1 + partIdx].Value or nil
+                        subImage.Image = partIcon[1]
+                        subImage.ImageRectSize = partIcon[2].ImageRectSize
+                        subImage.ImageRectOffset = partIcon[2].ImageRectPosition
+                        subImage.Parent = imageLabel
+                    end
+                end
+
+                iconProps.IconFrame = imageLabel
+            end
+
+            return iconProps
+        end
+
+        return IconEngine
+    end
+end
